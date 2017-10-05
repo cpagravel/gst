@@ -32,8 +32,10 @@ highlight()
         ;;
     esac
   done
-
   RETURN_VAL=$RESULT_STRING
+
+  # Reset optind to beable to use getopts again
+  OPTIND=1
 }
 
 GIT_DIR_STRING=$(git rev-parse --git-dir 2>/dev/null)
@@ -60,8 +62,10 @@ else
     GIT_MODIFIER=`git status -s | awk '{print $1}'`
     GIT_FILE_PATH=`git status -s | awk '{print $2}'`
 
-    MODIFIERS=${GIT_MODIFIER}
-    MODIFIERS=($GIT_MODIFIER)
+    # Substitution to avoid unwanted behaviour from special characters
+    TEMP=${GIT_MODIFIER/'??'/'Untracked'}
+    TEMP=${TEMP/'!!'/'Ignored'}
+    MODIFIERS=($TEMP)
 
     FILE_PATHS=${GIT_FILE_PATH}
     FILE_PATHS=($GIT_FILE_PATH)
@@ -95,10 +99,10 @@ else
               elif [ "${MODIFIER}" == "U" ];
                 then
                   DESCRIPTION="Unmerged"
-              elif [ "${MODIFIER}" == "??" ];
+              elif [ "${MODIFIER}" == "Untracked" ];
                 then
                   DESCRIPTION="Untracked"
-              elif [ "${MODIFIER}" == "!!" ];
+              elif [ "${MODIFIER}" == "Ignored" ];
                 then
                   DESCRIPTION="Ignored"
               fi
