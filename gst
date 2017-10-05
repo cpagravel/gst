@@ -177,9 +177,9 @@ done
 OPTIND=1
 
 # Execution loop to parse specific functions
-while getopts ":a:r:c:d:D:vu" opt; do
+while getopts "arcdDAvuh" opt; do
   case "${opt}" in
-    a | r | c | u | D)
+    a | r | c | D | A)
       GenerateList
       ;;
   esac
