@@ -135,6 +135,7 @@ while getopts ":a:r:c:d:D:vu" opt; do
       for ref_num in "${TEMP_LIST[@]}"
       do
         rm "${FILE_PATHS[$ref_num]}" &>/dev/null
+        git add "${FILE_PATHS[$ref_num]}" &>/dev/null
       done
       ;;
     d)
@@ -155,9 +156,9 @@ done
 OPTIND=1
 
 # Execution loop to parse specific functions
-while getopts ":a:r:c:d:vu" opt; do
+while getopts ":a:r:c:d:D:vu" opt; do
   case "${opt}" in
-    a | r | c | u)
+    a | r | c | u | D)
       GenerateList
       ;;
   esac
@@ -167,7 +168,7 @@ OPTIND=1
 # Used to determine if the parameter is an integer
 SELECT_NUM=$(echo "$1" | grep -oP '^(\d+)$')
 
-if [ "$1" == "" ] || [ "$DISPLAY_LIST" == true ]; then
+if [ "$SELECT_NUM" == "" ] && [ "$DISPLAY_LIST" == true ]; then
     if [ "$GIT_FILE_PATH" == "" ]; then
             git status;
     else
