@@ -58,13 +58,15 @@ else
     LINE=$(expr $1 2>/dev/null)
 
     # the second sed command reverses the order. The awk command removes duplicates via associative array.
+    IFS=$'\n'
+    GIT_STATUS=`git status -s | awk '{print $0}'`
     GIT_MODIFIER=`git status -s | awk '{print $1}'`
     GIT_FILE_PATH=`git status -s | awk '{print $2}'`
 
     # Turn glob expansion off
     set -f
+    STATUS_LINES=($GIT_STATUS)
     MODIFIERS=($GIT_MODIFIER)
-
     FILE_PATHS=($GIT_FILE_PATH)
 
     TMP_COUNT=0
@@ -77,8 +79,10 @@ else
         else
             for MODIFIER in "${MODIFIERS[@]}"
             do
+              INDEX_MOD="${STATUS_LINES[${TMP_COUNT}]:0:1}"
+              WORK_TREE_MOD="${STATUS_LINES[${TMP_COUNT}]:1:2}"
               DESCRIPTION=""
-              COLOUR=
+              COLOUR=""
               if [ "${MODIFIER}" == "M" ];
                 then
                   DESCRIPTION="Modified"
@@ -104,18 +108,23 @@ else
                 then
                   DESCRIPTION="Ignored"
               fi
-              highlight -v "DESCRIPTION" -g "${DESCRIPTION}"
+              if [ "${WORK_TREE_MOD:0:1}" == "${MODIFIER:0:1}" ];
+                then
+                  COLOUR_FLAG="-r"
+              elif [ "${INDEX_MOD:0:1}" == "${MODIFIER:0:1}" ];
+                then
+                  COLOUR_FLAG="-g"  
+              fi
+              highlight -v "DESCRIPTION" "$COLOUR_FLAG" "${DESCRIPTION}"
 
-              echo -e "${TMP_COUNT}. $DESCRIPTION ${FILE_PATHS[${TMP_COUNT}]}"
+              # nice formatting
+              NUMBER_DISP=$(echo "${TMP_COUNT}.     " | head -c 5)
+              DESCRIPTION=$(echo "${DESCRIPTION}                     " | head -c 25)
+
+              echo -e "${NUMBER_DISP}${DESCRIPTION}${FILE_PATHS[${TMP_COUNT}]}"
               TMP_COUNT=$(expr $TMP_COUNT + 1)
             done
         fi
-    # elif [ "$1" == "0" ];
-        # then
-            # git checkout HEAD
-    # elif [ "${#MATCHES[@]}" == 1 ];
-        # then
-            # git checkout "${MATCHES[$LINE]}"
     elif [ "$1" -le "${#MODIFIERS[@]}" ];
         then 
             echo "${FILE_PATHS[$1]}";
