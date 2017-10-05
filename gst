@@ -50,7 +50,6 @@ else
     LIGHTGREEN="\e[92m"
     LIGHTYELLOW="\e[93m"
     DEFAULT="\e[m"
-
     HIGHLIGHT=$LIGHTRED
     NEUTRAL=$LIGHTYELLOW
 
@@ -62,12 +61,10 @@ else
     GIT_MODIFIER=`git status -s | awk '{print $1}'`
     GIT_FILE_PATH=`git status -s | awk '{print $2}'`
 
-    # Substitution to avoid unwanted behaviour from special characters
-    TEMP=${GIT_MODIFIER/'??'/'Untracked'}
-    TEMP=${TEMP/'!!'/'Ignored'}
-    MODIFIERS=($TEMP)
+    # Turn glob expansion off
+    set -f
+    MODIFIERS=($GIT_MODIFIER)
 
-    FILE_PATHS=${GIT_FILE_PATH}
     FILE_PATHS=($GIT_FILE_PATH)
 
     TMP_COUNT=0
@@ -81,6 +78,7 @@ else
             for MODIFIER in "${MODIFIERS[@]}"
             do
               DESCRIPTION=""
+              COLOUR=
               if [ "${MODIFIER}" == "M" ];
                 then
                   DESCRIPTION="Modified"
@@ -99,10 +97,10 @@ else
               elif [ "${MODIFIER}" == "U" ];
                 then
                   DESCRIPTION="Unmerged"
-              elif [ "${MODIFIER}" == "Untracked" ];
+              elif [ "${MODIFIER}" == "??" ];
                 then
                   DESCRIPTION="Untracked"
-              elif [ "${MODIFIER}" == "Ignored" ];
+              elif [ "${MODIFIER}" == "!!" ];
                 then
                   DESCRIPTION="Ignored"
               fi
