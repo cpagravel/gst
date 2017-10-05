@@ -6,7 +6,7 @@ if [ "$GIT_DIR_STRING" == "" ]; then
 fi
 
 # usage highlight -v variable_name [-g/r/y | text]
-highlight()
+Highlight()
 {
   RED="\e[31m"
   GREEN="\e[32m"
@@ -43,13 +43,15 @@ highlight()
   OPTIND=1
 }
 
-usage()
+Usage()
 {
 gst_filename=$(basename $0)
-echo -e "usage: ${gst_filename} [ [ -a | -c | -r | -d ] REF_NUM  | -v ]
+echo -e "usage: ${gst_filename} [ [ -a | -c | -r | -d ] REF_NUM  | -v | -u ]
 
   -v                  show the full paths of the files instead of just the file name
 
+  -u                  eq to \e[32mgit add \e[31m-u\e[m
+  
   REF_NUM             print the path of the file referenced by REF_NUM
 
   -a REF_NUM          eq to \e[32mgit add \e[31m<file>\e[m where \e[31m<file>\e[m is replaced with referenced file of REF_NUM
@@ -64,38 +66,41 @@ echo -e "usage: ${gst_filename} [ [ -a | -c | -r | -d ] REF_NUM  | -v ]
 
 LINE=$(expr $1 2>/dev/null)
 
-# the second sed command reverses the order. The awk command removes duplicates via associative array.
-IFS=$'\n'
-GIT_STATUS=`git status -s | awk '{print $0}'`
-GIT_MODIFIER=`git status -s | awk '{print $1}'`
-GIT_FILE_PATH=`git status -s | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`
-# Turn glob expansion off
-set -f
-STATUS_LINES=($GIT_STATUS)
-MODIFIERS=($GIT_MODIFIER)
-FILE_PATHS=($GIT_FILE_PATH)
-FILE_NAMES=($(echo "$GIT_FILE_PATH" | awk '{print "\""$0"\""}' | xargs -l basename 2>/dev/null))
-TMP_COUNT=0
-
-# flags for parsing arguments
+DISPLAY_LIST=true
 VERBOSE_FLAG=false
-CALL_MENU_FLAG=false
 
-call_menu()
+GenerateList()
 {
-  if [ $VERBOSE_FLAG = true ]; then
-      gst -v
-    else
-      gst
-  fi
+  # the second sed command reverses the order. The awk command removes duplicates via associative array.
+  IFS=$'\n'
+  GIT_STATUS=`git status -s | awk '{print $0}'`
+  GIT_MODIFIER=`git status -s | awk '{print $1}'`
+  GIT_FILE_PATH=`git status -s | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`
+  # Turn glob expansion off
+  set -f
+  STATUS_LINES=($GIT_STATUS)
+  MODIFIERS=($GIT_MODIFIER)
+  FILE_PATHS=($GIT_FILE_PATH)
+  FILE_NAMES=($(echo "$GIT_FILE_PATH" | awk '{print "\""$0"\""}' | xargs -l basename 2>/dev/null))
+  TMP_COUNT=0
+
+  if [ "$VERBOSE_FLAG" == true ]; then
+    FILE_NAMES=("${FILE_PATHS[@]}")
+  fi  
 }
 
+# Generate the initial list for operations
+GenerateList
+
 # First pass. Executions handled
-while getopts ":a:r:c:d:D:v" opt; do
+while getopts ":a:r:c:d:D:vu" opt; do
   case "${opt}" in
     v)
       FILE_NAMES=("${FILE_PATHS[@]}")
       VERBOSE_FLAG=true
+      ;;
+    u)
+      git add -u
       ;;
     a)
       IFS=','
@@ -133,8 +138,11 @@ while getopts ":a:r:c:d:D:v" opt; do
       done
       ;;
     d)
-      echo $(gst $OPTARG)
-      git diff HEAD $(gst $OPTARG)
+      ref_num=$(expr $OPTARG 2>/dev/null)
+      if ! [ "$ref_num" == "" ]; then
+        git diff HEAD "${FILE_PATHS[$ref_num]}"
+      fi
+      exit 0;
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -147,23 +155,19 @@ done
 OPTIND=1
 
 # Execution loop to parse specific functions
-while getopts ":a:r:c:d:v" opt; do
+while getopts ":a:r:c:d:vu" opt; do
   case "${opt}" in
-    a | r | c)
-      call_menu
-      exit 0;
-      ;;
-    d)
-      exit 0;
+    a | r | c | u)
+      GenerateList
       ;;
   esac
 done
-OPTIND=1
+OPTIND=1 
 
 # Used to determine if the parameter is an integer
 SELECT_NUM=$(echo "$1" | grep -oP '^(\d+)$')
 
-if [ "$1" == "" ] || [ "$1" == "-v" ]; then
+if [ "$1" == "" ] || [ "$DISPLAY_LIST" == true ]; then
     if [ "$GIT_FILE_PATH" == "" ]; then
             git status;
     else
@@ -195,13 +199,13 @@ if [ "$1" == "" ] || [ "$1" == "-v" ]; then
           elif [ "${INDEX_MOD:0:1}" == "${MODIFIER:0:1}" ]; then
               COLOUR_FLAG="-g"  
           fi
-          highlight -v "DESCRIPTION" "$COLOUR_FLAG" "${DESCRIPTION}"
+          Highlight -v "DESCRIPTION" "$COLOUR_FLAG" "${DESCRIPTION}"
 
           # nice formatting
           NUMBER_DISP=$(echo "${TMP_COUNT}. $(printf '%.0s ' {1..50})" | head -c 5)
           DESCRIPTION=$(echo "${DESCRIPTION}  $(printf '%.0s ' {1..50})" | head -c 25)
           FILE_PATH="${FILE_NAMES[${TMP_COUNT}]}"
-          highlight -v "FILE_PATH" "$COLOUR_FLAG" "${FILE_PATH}"
+          Highlight -v "FILE_PATH" "$COLOUR_FLAG" "${FILE_PATH}"
           echo -e "${NUMBER_DISP}${DESCRIPTION}${FILE_PATH}  (${TMP_COUNT})"
           TMP_COUNT=$(expr $TMP_COUNT + 1)
         done
