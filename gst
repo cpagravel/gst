@@ -5,76 +5,47 @@ if [ "$GIT_DIR_STRING" == "" ]; then
   exit -1
 fi
 
-# usage highlight [<[-g|-r|-y]> <TEXT>]
-Highlight()
-{
-  RED="\033[31m"
-  GREEN="\033[32m"
-  YELLOW="\033[33m"
-  LIGHTRED="\033[91m"
-  LIGHTGREEN="\033[92m"
-  LIGHTYELLOW="\033[93m"
-  DEFAULT="\033[m"
-  # RED="\e[31m"
-  # GREEN="\e[32m"
-  # YELLOW="\e[33m"
-  # LIGHTRED="\e[91m"
-  # LIGHTGREEN="\e[92m"
-  # LIGHTYELLOW="\e[93m"
-  # DEFAULT="\e[m"
-
-  RESULT_STRING=""
-  while getopts ":r:y:g:" opt; do
-    case "${opt}" in
-      # v)
-        # eval RETURN_VAL=\$$OPTARG       # OSX compatible
-        # declare -n RETURN_VAL=$OPTARG   # GNU-only compatible 
-        # ;;
-      r)
-        RESULT_STRING="${RED}$OPTARG${DEFAULT}"
-        ;;
-      y)
-        RESULT_STRING="${YELLOW}$OPTARG${DEFAULT}"
-        ;;
-      g)
-        RESULT_STRING="${GREEN}$OPTARG${DEFAULT}"
-        ;;
-      \?)
-        echo "Invalid option: -$OPTARG" >&2
-        exit -1
-        ;;
-    esac
-  done
-  RETURN_VAL=$RESULT_STRING
-
-  echo $RETURN_VAL # Return the value
-
-  # Reset optind to beable to use getopts again
-  OPTIND=1
+function Trim_to_length() {
+  echo "${1}$(printf '%.0s ' {1..50})" | head -c $(expr $2)
 }
+
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+MAGENTA=$(tput setaf 5)
+YELLOW=$(tput setaf 226)
+BOLD=$(tput bold)
+RESET=$(tput sgr0)
+
+# RED="\033[31m"
+# GREEN="\033[32m"
+# YELLOW="\033[33m"
+# LIGHTRED="\033[91m"
+# LIGHTGREEN="\033[92m"
+# LIGHTYELLOW="\033[93m"
+# DEFAULT="\033[m"
 
 Usage()
 {
 gst_filename=$(basename $0)
 echo -e "usage: ${gst_filename} [<-a|-r|-c|-d|-D> <REF_NUM>] [REF_NUM] [-A] [-v] [-u]
 
-  -a REF_NUM          eq to \033[32mgit add \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with referenced file of REF_NUM
+  -a REF_NUM          eq to ${GREEN}git add ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with referenced file of REF_NUM
 
-  -r REF_NUM          eq to \033[32mgit reset HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+  -r REF_NUM          eq to ${GREEN}git reset HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  -c REF_NUM          eq to \033[32mgit checkout HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+  -c REF_NUM          eq to ${GREEN}git checkout HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  -d REF_NUM          eq to \033[32mgit diff HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+  -d REF_NUM          eq to ${GREEN}git diff HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
   
-  -D REF_NUM          eq to \033[32mrm \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+  -D REF_NUM          eq to ${GREEN}rm ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
   REF_NUM             print the path of the file referenced by REF_NUM
 
-  -A                  eq to \033[32mgit add \033[31m-u\033[m
+  -A                  eq to ${GREEN}git add ${RED}-u${RESET}
 
   -v                  show the full paths of the files instead of just the file name
 
-  -u                  eq to \033[32mgit add \033[31m-u\033[m
+  -u                  eq to ${GREEN}git add ${RED}-u${RESET}
 "
 }
 
@@ -88,7 +59,7 @@ GenerateList()
   # the second sed command reverses the order. The awk command removes duplicates via associative array.
   IFS=$'\n'
   GIT_STATUS=`git status -s | awk '{print $0}'`
-  GIT_MODIFIER=`git status -s | awk '{print $1}'`
+  GIT_MODIFIER=`git status -s | awk '{print substr($0,0,2)}'`
   GIT_FILE_PATH=`git status -s | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`
   # Turn glob expansion off
   set -f
@@ -186,6 +157,33 @@ while getopts "arcdDAvuh" opt; do
 done
 OPTIND=1 
 
+Git_flag_decode() {
+  # Standard dev
+  if [ "${1:0:1}" == "M" ]; then
+      FLAG_RESULT="Modified"
+  elif [ "${1:0:1}" == "A" ]; then
+      FLAG_RESULT="Added"
+  elif [ "${1:0:1}" == "D" ]; then
+      FLAG_RESULT="Deleted"
+  elif [ "${1:0:1}" == "R" ]; then
+      FLAG_RESULT="Renamed"
+  elif [ "${1:0:1}" == "C" ]; then
+      FLAG_RESULT="Copied"
+  elif [ "${1:0:1}" == "U" ]; then
+      FLAG_RESULT="Unmerged"
+  elif [ "${1:0:1}" == "T" ]; then
+      FLAG_RESULT="TypeChg"
+  elif [ "${1:0:1}" == "?" ]; then
+      FLAG_RESULT="Untrackd"
+  elif [ "${1:0:1}" == "!" ]; then
+      FLAG_RESULT="Ignored"
+  # Submodule case
+  elif [ "${1:0:1}" == "m" ]; then
+      FLAG_RESULT="Sub Mod"
+  fi
+  printf "${FLAG_RESULT}"
+}
+
 # Used to determine if the parameter is an integer
 SELECT_NUM=$(echo "$1" | grep -oP '^(\d+)$')
 
@@ -193,41 +191,16 @@ if [ "$SELECT_NUM" == "" ] && [ "$DISPLAY_LIST" == true ]; then
     if [ "$GIT_FILE_PATH" == "" ]; then
             git status;
     else
+        printf "${YELLOW}#   INDEX     CUR_TREE  FILE${RESET}\n"
         for MODIFIER in "${MODIFIERS[@]}"
         do
-          INDEX_MOD="${STATUS_LINES[${TMP_COUNT}]:0:1}"
-          WORK_TREE_MOD="${STATUS_LINES[${TMP_COUNT}]:1:2}"
-          DESCRIPTION=""
-          COLOUR=""
-          if [ "${MODIFIER:0:1}" == "M" ]; then
-              DESCRIPTION="Modified"
-          elif [ "${MODIFIER:0:1}" == "A" ]; then
-              DESCRIPTION="Added"
-          elif [ "${MODIFIER:0:1}" == "D" ]; then
-              DESCRIPTION="Deleted"
-          elif [ "${MODIFIER:0:1}" == "R" ]; then
-              DESCRIPTION="Renamed"
-          elif [ "${MODIFIER:0:1}" == "C" ]; then
-              DESCRIPTION="Copied"
-          elif [ "${MODIFIER:0:1}" == "U" ]; then
-              DESCRIPTION="Unmerged"
-          elif [ "${MODIFIER:0:1}" == "?" ]; then
-              DESCRIPTION="Untracked"
-          elif [ "${MODIFIER:0:1}" == "!" ]; then
-              DESCRIPTION="Ignored"
-          fi
-          if [ "${WORK_TREE_MOD:0:1}" == "${MODIFIER:0:1}" ]; then
-              COLOUR_FLAG="-r"
-          elif [ "${INDEX_MOD:0:1}" == "${MODIFIER:0:1}" ]; then
-              COLOUR_FLAG="-g"  
-          fi
-          DESCRIPTION=$(Highlight $COLOUR_FLAG $DESCRIPTION)
-          # nice formatting
-          NUMBER_DISP=$(echo "${TMP_COUNT}. $(printf '%.0s ' {1..50})" | head -c 5)
-          DESCRIPTION=$(echo "${DESCRIPTION}  $(printf '%.0s ' {1..50})" | head -c 25)
+          # Innermost brackets decode to a string, then trim, then colour
+          INDEX_DESC="${GREEN}$(Trim_to_length "$(Git_flag_decode ${MODIFIER:0:1})" 10)${RESET}"
+          WORK_TREE_DESC="${RED}$(Trim_to_length "$(Git_flag_decode ${MODIFIER:1:2})" 10)${RESET}"
+
+          NUMBER_DISP=`Trim_to_length "${TMP_COUNT}    " 4`
           FILE_PATH="${FILE_NAMES[${TMP_COUNT}]}"
-          FILE_PATH=$(Highlight $COLOUR_FLAG $FILE_PATH)
-          echo -e "${NUMBER_DISP}${DESCRIPTION}${FILE_PATH}  (${TMP_COUNT})"
+          echo -e "${MAGENTA}${NUMBER_DISP}${RESET}${INDEX_DESC}${WORK_TREE_DESC}${FILE_PATH}  (${MAGENTA}${TMP_COUNT}${RESET})"
           TMP_COUNT=$(expr $TMP_COUNT + 1)
         done
     fi
