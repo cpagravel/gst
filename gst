@@ -5,23 +5,31 @@ if [ "$GIT_DIR_STRING" == "" ]; then
   exit -1
 fi
 
-# usage highlight -v variable_name [-g/r/y | text]
+# usage highlight [<[-g|-r|-y]> <TEXT>]
 Highlight()
 {
-  RED="\e[31m"
-  GREEN="\e[32m"
-  YELLOW="\e[33m"
-  LIGHTRED="\e[91m"
-  LIGHTGREEN="\e[92m"
-  LIGHTYELLOW="\e[93m"
-  DEFAULT="\e[m"
+  RED="\033[31m"
+  GREEN="\033[32m"
+  YELLOW="\033[33m"
+  LIGHTRED="\033[91m"
+  LIGHTGREEN="\033[92m"
+  LIGHTYELLOW="\033[93m"
+  DEFAULT="\033[m"
+  # RED="\e[31m"
+  # GREEN="\e[32m"
+  # YELLOW="\e[33m"
+  # LIGHTRED="\e[91m"
+  # LIGHTGREEN="\e[92m"
+  # LIGHTYELLOW="\e[93m"
+  # DEFAULT="\e[m"
 
   RESULT_STRING=""
-  while getopts ":v:r:y:g:" opt; do
+  while getopts ":r:y:g:" opt; do
     case "${opt}" in
-      v)
-        declare -n RETURN_VAL=$OPTARG
-        ;;
+      # v)
+        # eval RETURN_VAL=\$$OPTARG       # OSX compatible
+        # declare -n RETURN_VAL=$OPTARG   # GNU-only compatible 
+        # ;;
       r)
         RESULT_STRING="${RED}$OPTARG${DEFAULT}"
         ;;
@@ -39,6 +47,8 @@ Highlight()
   done
   RETURN_VAL=$RESULT_STRING
 
+  echo $RETURN_VAL # Return the value
+
   # Reset optind to beable to use getopts again
   OPTIND=1
 }
@@ -46,21 +56,25 @@ Highlight()
 Usage()
 {
 gst_filename=$(basename $0)
-echo -e "usage: ${gst_filename} [ [ -a | -c | -r | -d ] REF_NUM  | -v | -u ]
+echo -e "usage: ${gst_filename} [<-a|-r|-c|-d|-D> <REF_NUM>] [REF_NUM] [-A] [-v] [-u]
+
+  -a REF_NUM          eq to \033[32mgit add \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with referenced file of REF_NUM
+
+  -r REF_NUM          eq to \033[32mgit reset HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+
+  -c REF_NUM          eq to \033[32mgit checkout HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+
+  -d REF_NUM          eq to \033[32mgit diff HEAD \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+  
+  -D REF_NUM          eq to \033[32mrm \033[31m<file>\033[m where \033[31m<file>\033[m is replaced with the referenced file of REF_NUM
+
+  REF_NUM             print the path of the file referenced by REF_NUM
+
+  -A                  eq to \033[32mgit add \033[31m-u\033[m
 
   -v                  show the full paths of the files instead of just the file name
 
-  -u                  eq to \e[32mgit add \e[31m-u\e[m
-  
-  REF_NUM             print the path of the file referenced by REF_NUM
-
-  -a REF_NUM          eq to \e[32mgit add \e[31m<file>\e[m where \e[31m<file>\e[m is replaced with referenced file of REF_NUM
-
-  -r REF_NUM          eq to \e[32mgit reset HEAD \e[31m<file>\e[m where \e[31m<file>\e[m is replaced with the referenced file of REF_NUM
-
-  -c REF_NUM          eq to \e[32mgit checkout HEAD \e[31m<file>\e[m where \e[31m<file>\e[m is replaced with the referenced file of REF_NUM
-
-  -d REF_NUM          eq to \e[32mgit diff HEAD \e[31m<file>\e[m where \e[31m<file>\e[m is replaced with the referenced file of REF_NUM
+  -u                  eq to \033[32mgit add \033[31m-u\033[m
 "
 }
 
@@ -81,7 +95,8 @@ GenerateList()
   STATUS_LINES=($GIT_STATUS)
   MODIFIERS=($GIT_MODIFIER)
   FILE_PATHS=($GIT_FILE_PATH)
-  FILE_NAMES=($(echo "$GIT_FILE_PATH" | awk '{print "\""$0"\""}' | xargs -l basename 2>/dev/null))
+  FILE_NAMES=($(echo "$GIT_FILE_PATH" | awk '{print "\""$0"\""}' | xargs -L 1 basename 2>/dev/null))
+
   TMP_COUNT=0
 
   if [ "$VERBOSE_FLAG" == true ]; then
@@ -93,15 +108,8 @@ GenerateList()
 GenerateList
 
 # First pass. Executions handled
-while getopts ":a:r:c:d:D:vu" opt; do
+while getopts ":a:r:c:d:D:Avuh" opt; do
   case "${opt}" in
-    v)
-      FILE_NAMES=("${FILE_PATHS[@]}")
-      VERBOSE_FLAG=true
-      ;;
-    u)
-      git add -u
-      ;;
     a)
       IFS=','
       TEMP_LIST=($OPTARG)
@@ -129,15 +137,6 @@ while getopts ":a:r:c:d:D:vu" opt; do
         git checkout HEAD "${FILE_PATHS[$ref_num]}" &>/dev/null
       done
       ;;
-    D)
-      IFS=','
-      TEMP_LIST=($OPTARG)
-      for ref_num in "${TEMP_LIST[@]}"
-      do
-        rm "${FILE_PATHS[$ref_num]}" &>/dev/null
-        git add "${FILE_PATHS[$ref_num]}" &>/dev/null
-      done
-      ;;
     d)
       ref_num=$(expr $OPTARG 2>/dev/null)
       if ! [ "$ref_num" == "" ]; then
@@ -145,9 +144,31 @@ while getopts ":a:r:c:d:D:vu" opt; do
       fi
       exit 0;
       ;;
+    D)
+      IFS=','
+      TEMP_LIST=($OPTARG)
+      for ref_num in "${TEMP_LIST[@]}"
+      do
+        rm "${FILE_PATHS[$ref_num]}" &>/dev/null
+      done
+      ;;
+    A)
+      git add -A
+      ;;
+    v)
+      FILE_NAMES=("${FILE_PATHS[@]}")
+      VERBOSE_FLAG=true
+      ;;
+    u)
+      git add -u
+      ;;
+    h)
+      Usage
+      exit -1
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
-      usage
+      Usage
       exit -1
       ;;
   esac
@@ -200,13 +221,12 @@ if [ "$SELECT_NUM" == "" ] && [ "$DISPLAY_LIST" == true ]; then
           elif [ "${INDEX_MOD:0:1}" == "${MODIFIER:0:1}" ]; then
               COLOUR_FLAG="-g"  
           fi
-          Highlight -v "DESCRIPTION" "$COLOUR_FLAG" "${DESCRIPTION}"
-
+          DESCRIPTION=$(Highlight $COLOUR_FLAG $DESCRIPTION)
           # nice formatting
           NUMBER_DISP=$(echo "${TMP_COUNT}. $(printf '%.0s ' {1..50})" | head -c 5)
           DESCRIPTION=$(echo "${DESCRIPTION}  $(printf '%.0s ' {1..50})" | head -c 25)
           FILE_PATH="${FILE_NAMES[${TMP_COUNT}]}"
-          Highlight -v "FILE_PATH" "$COLOUR_FLAG" "${FILE_PATH}"
+          FILE_PATH=$(Highlight $COLOUR_FLAG $FILE_PATH)
           echo -e "${NUMBER_DISP}${DESCRIPTION}${FILE_PATH}  (${TMP_COUNT})"
           TMP_COUNT=$(expr $TMP_COUNT + 1)
         done
