@@ -59,7 +59,7 @@ GenerateList()
   # the second sed command reverses the order. The awk command removes duplicates via associative array.
   IFS=$'\n'
   GIT_STATUS=`git status -s | awk '{print $0}'`
-  GIT_MODIFIER=`git status -s | awk '{print substr($0,0,2)}'`
+  GIT_MODIFIER=`git status -s | awk '{print substr($0,1,3)}'`
   GIT_FILE_PATH=`git status -s | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`
   # Turn glob expansion off
   set -f
