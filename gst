@@ -1,4 +1,3 @@
-. .paths
 GIT_DIR_STRING=$(git rev-parse --git-dir 2>/dev/null)
 if [ "$GIT_DIR_STRING" == "" ]; then
   echo "fatal: Not a git repository";
@@ -161,7 +160,7 @@ OPTIND=1
 # Execution loop to parse specific functions
 while getopts "arcdDAvuh" opt; do
   case "${opt}" in
-    a | r | c | D | A)
+    a | r | c | u | D | A)
       GenerateList
       ;;
   esac
