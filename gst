@@ -26,27 +26,35 @@ RESET=$(tput sgr0)
 Usage()
 {
 gst_filename=$(basename $0)
-echo -e "usage: ${gst_filename} [<-a|-c|-d|-D|-e|-r> <REF_NUM>] [REF_NUM] [-A] [-v] [-u]
+echo -e "usage: ${gst_filename} [<-a|-c|-d|-D|-e|-r> <REF_NUM>]
+                                [REF_NUM] [-A] [-v] [-u]
 
-  -a REF_NUM          eq to ${GREEN}git add ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with referenced file of REF_NUM
+  -a REF_NUM      eq to ${GREEN}git add ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with referenced file of REF_NUM
 
-  -c REF_NUM          eq to ${GREEN}git checkout HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
+  -c REF_NUM      eq to ${GREEN}git checkout HEAD ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  -d REF_NUM          eq to ${GREEN}git diff HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
+  -d REF_NUM      eq to ${GREEN}git diff HEAD ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
   
-  -D REF_NUM          eq to ${GREEN}rm ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
+  -D REF_NUM      eq to ${GREEN}rm ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  -e REF_NUM          eq to ${GREEN}vim ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
+  -e REF_NUM      eq to ${GREEN}vim ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  -r REF_NUM          eq to ${GREEN}git reset HEAD ${RED}<file>${RESET} where ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
+  -r REF_NUM      eq to ${GREEN}git reset HEAD ${RED}<file>${RESET}
+                  ${RED}<file>${RESET} is replaced with the referenced file of REF_NUM
 
-  REF_NUM             print the path of the file referenced by REF_NUM
+  REF_NUM         print the path of the file referenced by REF_NUM
 
-  -A                  eq to ${GREEN}git add ${RED}-u${RESET}
+  -A              eq to ${GREEN}git add ${RED}-u${RESET}
 
-  -v                  show the full paths of the files instead of just the file name
+  -v              show the full paths of the files
+                  instead of just the file name
 
-  -u                  eq to ${GREEN}git add ${RED}-u${RESET}
+  -u              eq to ${GREEN}git add ${RED}-u${RESET}
 "
 }
 
