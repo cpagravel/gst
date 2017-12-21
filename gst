@@ -66,22 +66,26 @@ VERBOSE_FLAG=false
 GenerateList()
 {
   # the second sed command reverses the order. The awk command removes duplicates via associative array.
+  MODIFIERS=()
+  FILE_PATHS=()
+  FILE_NAMES=()
   IFS=$'\n'
-  GIT_STATUS=`git status -s | awk '{print $0}'`
-  GIT_MODIFIER=`git status -s | awk '{print substr($0,1,3)}'`
-  GIT_FILE_PATH=`git status -s | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`
   # Turn glob expansion off
   set -f
-  STATUS_LINES=($GIT_STATUS)
-  MODIFIERS=($GIT_MODIFIER)
-  FILE_PATHS=($GIT_FILE_PATH)
-  FILE_NAMES=($(echo "$GIT_FILE_PATH" | awk '{print "\""$0"\""}' | xargs -L 1 basename 2>/dev/null))
+  for line in `git status -s`
+  do
+    MODIFIERS+=(`echo $line | awk '{print substr($0,1,3)}'`)
+    FILE_PATHS+=(`echo $line | awk -v q="\"" '{gsub(/"/, "", $0); print substr($0, index($0,$2));}'`)
+    # FILE_NAMES+=(`basename "${FILE_PATHS[${#FILE_PATHS[@]}-1]}" 2>/dev/null`) # undesirable to remove '/' for dir names
+    FILE_NAMES+=(`echo ${line:3:${#line}-4} | xargs -I{} basename {} | xargs -I{} printf {}${line:(-1)}`) # keeps git status name
+  done
+  # Turn glob expansion back on
+  set +f
 
   TMP_COUNT=0
-
   if [ "$VERBOSE_FLAG" == true ]; then
     FILE_NAMES=("${FILE_PATHS[@]}")
-  fi  
+  fi
 }
 
 # Generate the initial list for operations
@@ -206,8 +210,9 @@ Git_flag_decode() {
 SELECT_NUM=$(echo "$1" | grep -oP '^(\d+)$')
 
 if [ "$SELECT_NUM" == "" ] && [ "$DISPLAY_LIST" == true ]; then
-    if [ "$GIT_FILE_PATH" == "" ]; then
-            git status;
+    if [ "${#FILE_NAMES[@]}" == "0" ]; then
+        # if repo is empty, display standard message to user
+        git status;
     else
         printf "${YELLOW}#   INDEX     CUR_TREE  FILE${RESET}\n"
         for MODIFIER in "${MODIFIERS[@]}"
