@@ -26,8 +26,8 @@ RESET=$(tput sgr0)
 Usage()
 {
 gst_filename=$(basename $0)
-echo -e "usage: ${gst_filename} [<-a|-c|-d|-D|-e|-r> <REF_NUM>]
-                                [REF_NUM] [-A] [-v] [-u]
+echo -e \
+"usage: ${gst_filename} [<-a|-c|-d|-D|-e|-r> <REF_NUM>] [REF_NUM] [-A] [-v] [-u]
 
   -a REF_NUM      eq to ${GREEN}git add ${RED}<file>${RESET}
                   ${RED}<file>${RESET} is replaced with referenced file of REF_NUM
