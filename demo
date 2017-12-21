@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+GRAY=$(tput setaf 247)
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+MAGENTA=$(tput setaf 5)
+YELLOW=$(tput setaf 226)
+BOLD=$(tput bold)
+RESET=$(tput sgr0)
+
+DIRECTORY='myRepo'
+
+function comment() {
+    echo "${GRAY}$1${RESET}"
+    sleep 2.2
+}
+
+function prompt() {
+    echo ${YELLOW}${DIRECTORY}${RESET}\(${BOLD}${CYAN}master${RESET}\) ${GREEN}✔${RESET} "$1"
+    sleep 2.2
+}
+
+function show() {
+    prompt "$1"
+    sleep 1
+    eval "$1"
+    sleep 2.3
+}
+
+clear
+comment "Hello World!"
+comment "gst is a command line tool for improving workflow with git"
+sleep 0.5
+comment "Use the -h option for a list of commands"
+show "gst -h # display help"
+
+comment "Show the files in the index and working tree"
+show "gst # list files and their status"
+
+comment "Add files and directories by number reference"
+show "gst -a 1,2,3,4 # add files to index"
+
+comment "Show the full path of the files listed"
+show "gst -v # display full paths relative to CWD"
+
+comment "Look at the diff of a file in the index"
+show "gst -d 0 # show file diff"
+
+comment "Edit files with Vim"
+show "gst -e 0 # edit with vim"
+show "gst -d 0 # show file diff"
+
+comment "Delete files by number reference"
+show "gst # show the files"
+show "gst -D 3 # permanently remove file"
+show "gst -a 3 # push the change to the index"
+
+comment "Use file path for other commands"
+show "cd dir2"
+DIRECTORY='dir2'
+show "gst 2; # get the path of the file from CWD"
+show 'cat `gst 2`'
+
+comment "Reset files from the index"
+show "gst -r 4 # remove file changes in index"
+
+comment "Checkout files from the index"
+show "command parse/a/path"
+show "gst -c 1 # checkout files from the index"
+show "command la/fin"
