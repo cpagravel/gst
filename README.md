@@ -1,7 +1,7 @@
 # gst ![Version][version-badge] [![MIT License][license-badge]](LICENSE.md)
 
 ## Synposis
-gst is a commandline app with some neat features for improving your workflow with git.
+gst is short for **G**it **St**atus - it's a commandline app with some neat features for improving your workflow
 
 ## Demo
 <div align="center">
