@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 GIT_DIR_STRING=$(git rev-parse --git-dir 2>/dev/null)
 if [ "$GIT_DIR_STRING" == "" ]; then
   echo "fatal: Not a git repository";
