@@ -170,33 +170,6 @@ while getopts "arcdDAvuh" opt; do
 done
 OPTIND=1 
 
-Git_flag_decode() {
-  # Standard dev
-  if [ "${1:0:1}" == "M" ]; then
-      FLAG_RESULT="Modified"
-  elif [ "${1:0:1}" == "A" ]; then
-      FLAG_RESULT="Added"
-  elif [ "${1:0:1}" == "D" ]; then
-      FLAG_RESULT="Deleted"
-  elif [ "${1:0:1}" == "R" ]; then
-      FLAG_RESULT="Renamed"
-  elif [ "${1:0:1}" == "C" ]; then
-      FLAG_RESULT="Copied"
-  elif [ "${1:0:1}" == "U" ]; then
-      FLAG_RESULT="Unmerged"
-  elif [ "${1:0:1}" == "T" ]; then
-      FLAG_RESULT="TypeChg"
-  elif [ "${1:0:1}" == "?" ]; then
-      FLAG_RESULT="Untrackd"
-  elif [ "${1:0:1}" == "!" ]; then
-      FLAG_RESULT="Ignored"
-  # Submodule case
-  elif [ "${1:0:1}" == "m" ]; then
-      FLAG_RESULT="Sub Mod"
-  fi
-  printf "${FLAG_RESULT}"
-}
-
 # Used to determine if the parameter is an integer
 SELECT_NUM=$(echo "$1" | grep -oP '^(\d+)$')
 
@@ -206,11 +179,25 @@ if [ "$SELECT_NUM" == "" ] && [ "$DISPLAY_LIST" == true ]; then
         git status;
     else
         printf "${YELLOW}#   INDEX     CUR_TREE  FILE${RESET}\n"
+        # Use associative array to decode git flags
+        declare -A gitFlagDecode
+        gitFlagDecode=( \
+          ["M"]="Modified"
+          ["A"]="Added   "
+          ["D"]="Deleted "
+          ["R"]="Renamed "
+          ["C"]="Copied  "
+          ["U"]="Unmerged"
+          ["T"]="TypeChg "
+          ["?"]="Untrackd"
+          ["!"]="Ignored "
+          ["m"]="Sub Mod "
+        )
         for MODIFIER in "${MODIFIERS[@]}"
         do
           # Innermost brackets decode to a string, then trim, then colour
-          INDEX_DESC="${GREEN}$(Trim_to_length "$(Git_flag_decode ${MODIFIER:0:1})" 10)${RESET}"
-          WORK_TREE_DESC="${RED}$(Trim_to_length "$(Git_flag_decode ${MODIFIER:1:2})" 10)${RESET}"
+          INDEX_DESC="${GREEN}$(Trim_to_length "${gitFlagDecode[${MODIFIER:0:1}]}" 10)${RESET}"
+          WORK_TREE_DESC="${RED}$(Trim_to_length "${gitFlagDecode[${MODIFIER:1:1}]}" 10)${RESET}"
 
           NUMBER_DISP=`Trim_to_length "${TMP_COUNT}    " 4`
           FILE_PATH="${FILE_NAMES[${TMP_COUNT}]}"
