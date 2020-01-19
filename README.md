@@ -1,4 +1,7 @@
-# gst ![Version][version-badge] [![MIT License][license-badge]](LICENSE.md)
+# gst [![MIT License][license-badge]](LICENSE.md)
+
+## Deprecated
+Use <a href="http://github.com/cpagravel/gst-python">gst-python</a> instead.
 
 ## Synposis
 gst is short for **G**it **St**atus - it's a commandline app with some neat features for improving your workflow
@@ -21,4 +24,3 @@ Requires Git version 2 and up.
 
 [license-badge]:   https://img.shields.io/badge/license-MIT-007EC7.svg
 [examples-link]:   https://github.com/cpagravel/gst/blob/master/gst_demo.gif
-[version-badge]:   https://img.shields.io/badge/version-1.0-blue.svg
